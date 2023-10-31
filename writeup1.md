@@ -80,7 +80,6 @@ DOWNLOADED: 4612 - FOUND: 2
 *Since webmail and phpmyadmin require credentials we don't have, let's check out the forum ! We'll have to access it with `https` to avoid getting a `403`*
 
 # Forum
-
 ![forum](imgs/forum.png)
 
 Yet again there is a way to login, but we don't have any credentials. There are multiple forum posts, let's check them out.
@@ -175,120 +174,102 @@ lmezard:G!@M6f4Eatau{sF"
 Finally we have new credentials! They don't work for ssh, but they do for ftp.
 
 # Ftp
-lmezard:G!@M6f4Eatau{sF"
-- doesnt work for ssh
-- works for ftp
+Alright, let's log in to FTP with the new credentials.
+```
+➜  ~ ftp lmezard@192.168.94.8
+Connected to 192.168.94.8.
+220 Welcome on this server
+331 Please specify the password.
+Password:
+230 Login successful.
+Remote system type is UNIX.
+Using binary mode to transfer files.
+```
 
+Perfect, let's see what's in there.
+```
+ftp> ls
+229 Entering Extended Passive Mode (|||50074|).
+150 Here comes the directory listing.
+-rwxr-x---    1 1001     1001           96 Oct 15  2015 README
+-rwxr-x---    1 1001     1001       808960 Oct 08  2015 fun
+226 Directory send OK.
+```
 
-get to two files fun / README
+Let's use `get` to download the files
+```
+ftp> get README
+[...]
+226 Transfer complete.
+96 bytes received in 00:00 (76.15 KiB/s)
+ftp> get fun
+[...]
+226 Transfer complete.
+808960 bytes received in 00:00 (36.50 MiB/s)
+```
+
+Let's see the content of the files; first `README`:
+```
 ➜  ~ cat README
 Complete this little challenge and use the result as password for user 'laurie' to login in ssh
-alright then
+```
 
+Pretty straightforward. Let's see what's in `fun`
+```
+➜  ~ cat fun
+[...]
+// Not showing anything cause it's too long but it's clearly not readable
+```
+
+Let's see what type of file it is then:
+```
 ➜  ~ file fun
 fun: POSIX tar archive (GNU)
-oh lmao ok
-bunch of pcap sick BUT we can guess where is what store from the binary right ? (plz)
-tcpdump don't work so i guess they're not real pcap sick
-dumbscript:
-for f in *; do
-  if grep -q "return" "$f"; then
-    echo -e "\n### File: $f ###"
-    cat "$f"
-  fi
-done
+```
 
-### File: 7DT5Q.pcap ###
-        return 'a';
+It's a tar archive; let's extract it:
+```
+➜  ~ tar -xvf fun
+ft_fun/
+ft_fun/C4D03.pcap
+ft_fun/GKGEP.pcap
+ft_fun/A5GPY.pcap
+ft_fun/K8SEB.pcap
+ft_fun/PFG98.pcap
+[...]
+```
 
-//file116
+Great, we have a bunch of pcap files. Let's see what's in them using tcpdump:
+```
+➜  ft_fun sudo tcpdump 6ERKN.pcap
+tcpdump: can't parse filter expression: syntax error
+```
 
-### File: APM1E.pcap ###
-        return 'I';
+Looks like they're not pcap files.
 
-//file6
+After looking at their content, we realise that they're just regular text files with what appears to be C code, along with a number that I can only assume is the line number. For example:
+```
+➜  ft_fun cat 44QJL.pcap 
+        printf("Hahahaha Got you!!!\n"); // C code
 
-### File: BJPCP.pcap ###
-char getme8() {
-        return 'w';
-}
-char getme9() {
-        return 'n';
-}
-char getme10() {
-        return 'a';
-}
-char getme11() {
-        return 'g';
-}
-char getme12()
-{
-        return 'e';
-}
-int main() {
-        printf("M");
-        printf("Y");
-        printf(" ");
-        printf("P");
-        printf("A");
-        printf("S");
-        printf("S");
-        printf("W");
-        printf("O");
-        printf("R");
-        printf("D");
-        printf(" ");
-        printf("I");
-        printf("S");
-        printf(":");
-        printf(" ");
-        printf("%c",getme1());
-        printf("%c",getme2());
-        printf("%c",getme3());
-        printf("%c",getme4());
-        printf("%c",getme5());
-        printf("%c",getme6());
-        printf("%c",getme7());
-        printf("%c",getme8());
-        printf("%c",getme9());
-        printf("%c",getme10());
-        printf("%c",getme11());
-        printf("%c",getme12());
-        printf("\n");
-        printf("Now SHA-256 it and submit");
-}
+//file560% // Line number
+```
 
-//file750
+I created a [lua script](/scripts/pcap_to_c.lua) to extract the C code from the files and put them in a single file. I also removed the `//file` part for extra clarity.
+```
+➜  ft_fun lua pcap_to_c.lua
+Created file:   main.c
+➜  ft_fun gcc main.c 
+➜  ft_fun ./a.out 
+MY PASSWORD IS: Iheartpwnage
+Now SHA-256 it and submit
+```
 
-### File: ECOW1.pcap ###
-        return 'e';
-
-//file57
-
-### File: J5LKW.pcap ###
-        return 't';
-
-//file522
-
-### File: T44J5.pcap ###
-        return 'p';
-
-//file737
-
-### File: T7VV0.pcap ###
-        return 'r';
-
-//file369
-
-### File: ZPY1Q.pcap ###
-        return 'h';
-
-//file38%
-(I removed all the useless stuff from the script)
-
-sick they were only 12 getme so we can go in order of the file number
- Iheartpwnage to sha236:
+Simple as that. Now let's SHA-256 the password and carry on as instructed in the `README`.
+```
 330b845f32185747e4f8ca15d40ca59796035c89ea809fb5d30f4da83ecf45a4
+```
+
 # SSH with user laurie
 ssh -v laurie@192.168.58.5
 
