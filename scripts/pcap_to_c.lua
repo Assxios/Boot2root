@@ -25,6 +25,7 @@ for filename in io.popen('ls'):lines() do
 end
 
 local filename = "main.c"
+
 -- Write to main.c if any matching files were found
 if next(output) ~= nil then 
     local file = io.open(filename, "w")
