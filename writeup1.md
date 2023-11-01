@@ -721,19 +721,60 @@ Perfect, now we can assemble the password for the `thor` user. According to the 
 
 ![bruh](imgs/subject.png)
 
-*Using the hints from the `README` to eliminate some of the possibilities (since we have multiple answers for some stages) and brute forcing the rest, we can find the password: `Publicspeakingisveryeasy.126241207201b2149opekmq426135`*  
-
+Using the hints from the `README` to eliminate some of the possibilities (since we have multiple answers for some stages) and brute forcing the rest, we can find the password:
+```
+Publicspeakingisveryeasy.126241207201b2149opekmq426135`  
+```
 
 # User thor
-log into thor and turtle
-it writes slash (I used paint)
-haha digest encryption
-sha-256 dont work
-nor MD5 wth
-oh it's caps SLASH
-sha-256 still dont work
-MD5 does
+
+Alright, let's login to the `thor` user with the new password.
+```
+laurie@BornToSecHackMe:~$ su thor
+Password:
+thor@BornToSecHackMe:~$
+```
+
+Let's see what's in the home directory.
+```
+thor@BornToSecHackMe:~$ ls
+README  turtle
+thor@BornToSecHackMe:~$ cat README
+Finish this challenge and use the result as password for 'zaz' user.
+```
+
+Let's finish this challenge then! There is a `turtle` executable in the home directory, let's see what it contains.
+```
+thor@BornToSecHackMe:~$ cat turtle
+Tourne gauche de 90 degrees
+Avance 50 spaces
+Avance 1 spaces
+Tourne gauche de 1 degrees
+Avance 1 spaces
+Tourne gauche de 1 degrees
+Avance 1 spaces
+[...]
+```
+
+Seems like directions, there happens to be a `turtle` python library, which has similar functions; however it's not in the same language. Let's translate the `turtle` file into python code.
+
+I've created a [python script](/scripts/turtle_solver.py) to do just that. It produces the following graphical output:
+
+![turtle1](imgs/turtle1.png)
+![turtle2](imgs/turtle2.png)
+![turtle3](imgs/turtle3.png)
+![turtle4](imgs/turtle4.png)
+![turtle5](imgs/turtle5.png)
+
+It is clearly writing `SLASH`. However it doesn't work as a password for the `zaz` user! Futhermore if we look at the end of the `turtle` file, we can see the following:
+```
+Can you digest the message? :)
+```
+
+The word `digest` is a hint, we need to hash the password. After using multiple hashing algorithms, I found that `MD5` works for the password of the `zaz` user.
+```
 646da671ca01bb5d84dbb5fb2238dc8e
+```
 
 # User zaz
 log into zaz and exploit me function
