@@ -4,7 +4,7 @@ When we first boot up the VM we're greeted with a login screen. Obviously we hav
 When looking at the startup logs of the VM, we can see that apache2 has been started, we therefore know that there is a web server running on this VM.
 
 # Finding the IP
-Let's find its IP ! "Since I'm using VirtualBox with a Host-Only network adapter that is configured automatically, all I have is a range of IPs:
+Let's find its IP ! Since I'm using VirtualBox with a Host-Only network adapter that is configured automatically, all I have is a range of IPs:
 ```
 Server Address: 192.168.94.2
 Server Mask: 255.255.255.0
@@ -96,7 +96,7 @@ Since we are on his account, let's try to go to the User's Area:
 
 ![forum2](imgs/forum2.png)
 
-There is an email address, let's try to login to the webmail with the same credentials. (but with `	laurie@borntosec.net` as the username)
+There is an email address, let's try to login to the webmail with the same credentials. (but with `laurie@borntosec.net` as the username)
 
 
 # Webmail
