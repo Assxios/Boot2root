@@ -1,8 +1,10 @@
-get ssh into any user first. or reserve shell
+# Introduction
+For the second writeup, we will assume that we already have access to a shell on the machine. Please refer to [writeup1.md](./writeup1.md) for more information on how to get a shell on the machine.
 
-run https://github.com/The-Z-Labs/linux-exploit-suggester/blob/master/linux-exploit-suggester.sh
+# Finding an exploit
+We will use a popular script called [linux-exploit-suggester](https://github.com/The-Z-Labs/linux-exploit-suggester/blob/master/linux-exploit-suggester.sh) to find a possible exploit for our machine:
 ```
-➜  ~ cat out
+➜  ~ ./linux-exploit-suggester.sh
 
 Available information:
 
@@ -21,42 +23,66 @@ Searching among:
 Possible Exploits:
 
 [+] [CVE-2016-5195] dirtycow
-
-   Details: https://github.com/dirtycow/dirtycow.github.io/wiki/VulnerabilityDetails
-   Exposure: highly probable
-   Tags: debian=7|8,RHEL=5{kernel:2.6.(18|24|33)-*},RHEL=6{kernel:2.6.32-*|3.(0|2|6|8|10).*|2.6.33.9-rt31},RHEL=7{kernel:3.10.0-*|4.2.0-0.21.el7},[ ubuntu=16.04|14.04|12.04 ]
-   Download URL: https://www.exploit-db.com/download/40611
-   Comments: For RHEL/CentOS see exact vulnerable versions here: https://access.redhat.com/sites/default/files/rh-cve-2016-5195_5.sh
+[...]
 ```
 
-you can learn how ditrycow works here:
-https://github.com/dirtycow/dirtycow.github.io/wiki/VulnerabilityDetails
+# Dirtycow
 
+## Explanation
 Here's a quick explanation of how it works:
 as you can see we're going to write to a write protected file `/etc/passwd`, normally this would not be possible but we can bypass this thanks to a race condition in the kernel:
 
-First we used `mmap` to map the file to our virtual memory, of course since the file is write protected we can't write to it so we'll have to use the `MAP_PRIVATE` will which create a copy of the file in our virtual memory when we try writing to it (COW = copy on write). However until we try to write to the file, our mapping to the file will point to the actual file's memory.
+ First, we use mmap to map the file to our virtual memory. Since the file is write-protected, we can't write to it directly. Therefore, we use the `MAP_PRIVATE` flag, which will create a copy of the file in our virtual memory when we attempt to write to it (this is known as "copy-on-write" or `COW`). However, until we attempt to write, our mapping points to the actual file's memory.
 
-Here's where the exploit starts happening, because of the behavior I just described. We will have two process, one which will try to write each character of our string to the corresponding position in the file a lot of times and the other one which will tell the kernel that we don't need that memory anymore (`madvise` with `MADV_DONTNEED`). So while the kernel tries to get rid of the pages as madvise told him to, it is also trying to make a private copy for the COW because we are trying to write to it with ptrace. If we get lucky (or run it a lot of times like we do), there will be a race condition where ptrace sucessfully writes to the file before the kernel can make a copy of the page. This will result in the file being modified.
-Once the COW mechanism, writing to the write protected file is no longer possible and any further writes will be done to the copy of the file in our virtual memory.
+The exploit takes advantage of the behavior I just described. We will have two processes: one tries to write each character of our string to the corresponding position in the file repeatedly (with `ptrace`), and the other informs the kernel that we no longer need that memory (`madvise` with `MADV_DONTNEED`).  
+While the kernel attempts to discard the pages as instructed by `madvise`, it simultaneously tries to create a private copy for the `COW` mechanism, since we are attempting to write to it using `ptrace`.  
+If we're lucky (or if we execute it enough times), a race condition occurs where `ptrace` successfully writes to the file before the kernel can create a copy of the page. This will result in the file being modified.  
+After the `COW` mechanism triggers, writing to the write-protected file directly is no longer possible, and any further writes will be directed to the copy of the file in our virtual memory.  
 *But we still have a lot of loops simply because we don't know, how many attempts it will take to get the race condition to happen.*
 
-I will use the pokemon c code with a few modifications to get a root shell.
-you can see the modified c code here ![exploit.c](scripts/exploit.c)
-Alright, let's write `root:As.Qw2p5l2zVE:0:0::/root:/bin/bash\n` within the /etc/passwd file. You can learn how I crafted this string in the exploit.c file's comments.
+If you would like to learn more about dirtycow, I recommedn reading [this github wiki](https://github.com/dirtycow/dirtycow.github.io/wiki/VulnerabilityDetails) and to watch [this video](https://www.youtube.com/watch?v=kEsshExn7aE).
 
-```
-cat /etc/passed
-compile
-execute
-cat /etc/passwd
-omg it's here modified
-```
+## Exploitation
+I will modify the [pokemon C code](https://github.com/dirtycow/dirtycow.github.io/blob/master/pokemon.c) to gain a root shell. The modified C code is available at [exploit.c](./scripts/exploit.c).   
+Next, I plan to inject the string `root:As.Qw2p5l2zVE:0:0::/root:/bin/bash\n` into the `/etc/passwd` file. The methodology behind crafting this string is documented in the comments of the exploit.c file.
 
-let's try to login to root with the password `Password` *this is the password before it was hashed to `As.Qw2p5l2zVE`*
+First let's see the state of the `/etc/passwd` file:
 ```
-su root
-id
+zaz@BornToSecHackMe:~$ cat /etc/passwd
+root:x:0:0:root:/root:/bin/bash
+daemon:x:1:1:daemon:/usr/sbin:/bin/sh
+[...]
 ```
 
-it works
+Alright, let's compile the exploit and run it:
+```
+zaz@BornToSecHackMe:~$ gcc -pthread exploit.c
+zaz@BornToSecHackMe:~$ ./a.out
+mmap b7fda000
+
+madvise 0
+
+ptrace 0
+```
+
+Alright, let's see if the exploit worked:
+```
+zaz@BornToSecHackMe:~$ cat /etc/passwd
+root:As.Qw2p5l2zVE:0:0::/root:/bin/bash
+ma1:daemon:/usr/sbin:/bin/sh
+[...]
+```
+
+It worked ! Let's try to login as root with the password `Password` (*this is the password before it was hashed to `As.Qw2p5l2zVE`*).
+
+# We are root
+```
+zaz@BornToSecHackMe:~$ su root
+Password:
+root@BornToSecHackMe:/home/zaz# whoami
+root
+root@BornToSecHackMe:/home/zaz# id
+uid=0(root) gid=0(root) groups=0(root)
+```
+
+That's it !

