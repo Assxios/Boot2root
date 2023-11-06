@@ -895,8 +895,9 @@ First of all, we need a shellcode. Here's ours:
 Then we need the size of the padding. We know that the stack was allocated 144 bytes, here's the stack layout:
 ```
 ebp+16-144 ->  buffer
-ebp+8-12   ->  argv
-ebp+4-8    ->  argc
+ebp+12-16  ->  argv
+ebp+8-12   ->  argc
+ebp+4-8    ->  Old frame pointer (previous ebp value)
 ebp+0-4    ->  return address
 ```
 
