@@ -11,12 +11,12 @@ As requested by the subject, we need to provide two solutions to the challenge.
 ## Writeup1:
 The first writeup is the solution expected by the subject. It's more of a CTF style solution than a real life scenario.
 
-You can find the writeup at [here](./writeups/writeup1.md)
+You can find the writeup at [here](./writeup1.md)
 
 ## Writeup2:
 The second writeup is a more realistic solution. It's utalizing a race condition in the kernel to gain root access.
 
-You can find the writeup at [here](./writeups/writeup2.md)
+You can find the writeup at [here](./writeup2.md)
 
 # Documentation:
 You will find all specific information about how I solved the different challenges within the writeups file. Any basic information is not provided as you can easily find it on the internet.
