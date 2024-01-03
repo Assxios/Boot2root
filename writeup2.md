@@ -30,7 +30,7 @@ Possible Exploits:
 
 ## Explanation
 Here's a quick explanation of how it works:
-as you can see we're going to write to a write protected file `/etc/passwd`, normally this would not be possible but we can bypass this thanks to a race condition in the kernel:
+as you can see we're going to write to a write protected file `/etc/passwd`, normally this would not be possible, but we can bypass this thanks to a race condition in the kernel:
 
  First, we use mmap to map the file to our virtual memory. Since the file is write-protected, we can't write to it directly. Therefore, we use the `MAP_PRIVATE` flag, which will create a copy of the file in our virtual memory when we attempt to write to it (this is known as "copy-on-write" or `COW`). However, until we attempt to write, our mapping points to the actual file's memory.
 
@@ -40,7 +40,7 @@ If we're lucky (or if we execute it enough times), a race condition occurs where
 After the `COW` mechanism triggers, writing to the write-protected file directly is no longer possible, and any further writes will be directed to the copy of the file in our virtual memory.  
 *But we still have a lot of loops simply because we don't know, how many attempts it will take to get the race condition to happen.*
 
-If you would like to learn more about dirtycow, I recommedn reading [this github wiki](https://github.com/dirtycow/dirtycow.github.io/wiki/VulnerabilityDetails) and to watch [this video](https://www.youtube.com/watch?v=kEsshExn7aE).
+If you would like to learn more about dirtycow, I recommend reading [this github wiki](https://github.com/dirtycow/dirtycow.github.io/wiki/VulnerabilityDetails) and to watch [this video](https://www.youtube.com/watch?v=kEsshExn7aE).
 
 ## Exploitation
 I will modify the [pokemon C code](https://github.com/dirtycow/dirtycow.github.io/blob/master/pokemon.c) to gain a root shell. The modified C code is available at [exploit.c](./scripts/exploit.c).   

