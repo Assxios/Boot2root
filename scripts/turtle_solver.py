@@ -1,4 +1,4 @@
-# sudo apt-get install python3.10-tk
+# sudo apt-get install python3-tk
 # pip install pytk
 
 from turtle import *
